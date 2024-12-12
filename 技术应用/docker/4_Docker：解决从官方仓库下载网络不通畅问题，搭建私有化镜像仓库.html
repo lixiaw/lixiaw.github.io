@@ -1,0 +1,580 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库 | 程序员七平</title><meta name="keywords" content="Docker"><meta name="author" content="程序员七平,lixiahanyu@outlook.com"><meta name="copyright" content="程序员七平"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库"><meta name="application-name" content="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库"><meta property="og:url" content="https://lixiaw.github.io/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html"><meta property="og:site_name" content="程序员七平"><meta property="og:description" content="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库本文主要针对适用于个人的镜像仓库Registry和适用于企业的镜像仓库Harbor 做介绍。 先看看搭建私有化镜像仓库能解决什么问题？ 1.搭建Docker私有化仓库能解决什么问题？ 镜像拉取、下载慢：从本地私有仓库下载镜像比从远程公共仓库下载要快"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="https://lixiaw.github.io/images/posts/docker/1/0.jpg"><meta property="article:author" content="程序员七平"><meta property="article:tag" content="Java, lixiaw, 七平, 程序员七平, Spring, SpringCloud, SpringBoot, AI, AIGC"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="https://lixiaw.github.io/images/posts/docker/1/0.jpg"><meta name="description" content="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库本文主要针对适用于个人的镜像仓库Registry和适用于企业的镜像仓库Harbor 做介绍。 先看看搭建私有化镜像仓库能解决什么问题？ 1.搭建Docker私有化仓库能解决什么问题？ 镜像拉取、下载慢：从本地私有仓库下载镜像比从远程公共仓库下载要快"><link rel="shortcut icon" href="/favicon.ico"><link rel="canonical" href="https://lixiaw.github.io/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html"><link rel="preconnect" href="//cdn.cbd.int"/><link rel="preconnect" href="//hm.baidu.com"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="code-xxx"/><meta name="msvalidate.01" content="xxx"/><link rel="manifest" href="/manifest.json"/><meta name="msapplication-TileColor" content="var(--anzhiyu-main)"/><link rel="mask-icon" href="/img/siteicon/apple-icon-180.png" color="#5bbad5"/><link rel="apple-touch-icon" sizes="180x180" href="/img/siteicon/apple-icon-180.png"/><link rel="apple-touch-icon-precomposed" sizes="180x180" href="/img/siteicon/apple-icon-180.png"/><link rel="icon" type="image/png" sizes="32x32" href="/img/siteicon/32.png"/><link rel="icon" type="image/png" sizes="16x16" href="/img/siteicon/16.png"/><link rel="bookmark" href="/img/siteicon/apple-icon-180.png"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2048-2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2732-2048.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1668-2388.jpg" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2388-1668.jpg" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1536-2048.jpg" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2048-1536.jpg" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1668-2224.jpg" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2224-1668.jpg" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1620-2160.jpg" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2160-1620.jpg" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1290-2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2796-1290.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1179-2556.jpg" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2556-1179.jpg" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1284-2778.jpg" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2778-1284.jpg" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1170-2532.jpg" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2532-1170.jpg" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1125-2436.jpg" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2436-1125.jpg" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1242-2688.jpg" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2688-1242.jpg" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-828-1792.jpg" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1792-828.jpg" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1242-2208.jpg" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-2208-1242.jpg" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-750-1334.jpg" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1334-750.jpg" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-640-1136.jpg" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/><link rel="apple-touch-startup-image" href="/img/siteicon/apple-splash-1136-640.jpg" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.cbd.int/@fancyapps/ui@5.0.28/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/swiper/swiper.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?0e3e3f6f508b41a6d4f59ebc10221af2";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = {
+  linkPageTop: undefined,
+  peoplecanvas: undefined,
+  postHeadAiDescription: undefined,
+  diytitle: {"enable":true,"leaveTitle":"再看看嘛！","backTitle":"欢迎回来！"},
+  LA51: {"enable":true,"ck":null,"LingQueMonitorID":"3KKpUntdZr17qx4o"},
+  greetingBox: undefined,
+  twikooEnvId: 'https://blog-smoky-ten.vercel.app/',
+  commentBarrageConfig:undefined,
+  music_page_default: "nav_music",
+  root: '/',
+  preloader: {"source":3},
+  friends_vue_info: undefined,
+  navMusic: false,
+  mainTone: undefined,
+  authorStatus: undefined,
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简","rightMenuMsgToTraditionalChinese":"转为繁体","rightMenuMsgToSimplifiedChinese":"转为简体"},
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    simplehomepage: true,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"copy":true,"copyrightEbable":false,"limitCount":50,"languages":{"author":"作者: 程序员七平","link":"链接: ","source":"来源: 程序员七平","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。","copySuccess":"复制成功，复制和转载请标注本文地址"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#425AEF","bgDark":"#1f1f1f","position":"top-center"},
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.cbd.int/flickr-justified-gallery@2.1.2/dist/fjGallery.min.js',
+      css: 'https://cdn.cbd.int/flickr-justified-gallery@2.1.2/dist/fjGallery.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  shortcutKey: undefined,
+  autoDarkmode: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  configTitle: '程序员七平',
+  title: '解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库',
+  postAI: '',
+  pageFillDescription: '解决从官方仓库下载网络不通畅问题搭建私有化镜像仓库, 1.搭建Docker私有化仓库能解决什么问题？, 2.常用私有化镜像仓库介绍, 2.1 Docker官方Registry镜像, 2.2 Harbor, 3.安装部署（compose方式）, 3.1 Docker Registry和Docker-registry-ui, 3.2 Harbor, 4.使用, 4.1 配置Docker守护进程（在Docker客户端上）, 4.2 推送和拉取镜像(Docker Registry和Harbor)解决从官方仓库下载网络不通畅问题搭建私有化镜像仓库本文主要针对适用于个人的镜像仓库和适用于企业的镜像仓库做介绍先看看搭建私有化镜像仓库能解决什么问题搭建私有化仓库能解决什么问题镜像拉取下载慢从本地私有仓库下载镜像比从远程公共仓库下载要快得多因为数据传输的延迟和带宽限制被大大降低个人使用很重要节省网络带宽私有仓库允许用户在本地网络内下载和分发镜像因此能够尽量避免从远程公共仓库进行下载个人使用很重要增强安全性私有化仓库允许对镜像进行更严格的安全控制和审计进行更细粒度的访问权限限制确保只有授权用户才能下载和上传镜像镜像的统一管理和分发私有仓库使得镜像的管理和分发更加集中和统一管理员可以轻松地管理不同版本和标签的镜像确保团队成员使用一致的镜像版本如果平时使用过程中有使用的比较好的镜像可以拉取下来然后推送到自己的仓库收藏一下有时候想用的时候又拉取不下来很是折腾费时间常用私有化镜像仓库介绍官方镜像官方镜像是一个开源的轻量级的镜像仓库解决方案它提供了基本的镜像存储和分发功能是官方推荐的私有仓库搭建方式之一适用场景一个简单轻量级的私有仓库适用于小型团队或个人开发者对镜像管理功能要求不高主要关注基本的镜像存储和分发注意本身默认并不提供图形化界面是一个企业级的服务器由开源并维护适用场景一个功能全面的私有仓库适用于中大型企业或团队对用户和镜像进行细粒度的权限控制对镜像的安全性可靠性和性能有较高要求需要与系统集成实现自动化构建和部署安装部署方式本文安装优先采用方式进行安装部署如果有不清楚的可以去看前面的文章和前提条件已经安装了文件示例内容解释定义了一个名为的服务它使用官方的镜像并在容器内运行容器内的端口被映射到宿主机的端口同时目录被用作镜像的存储位置定义了一个名为的服务如果拉取不下来可以用下面的加速地址图形化界面或者使用特定的版本例如可选设置来限制中显示的镜像数量启动服务在文件所在的目录下运行以下命令来启动服务这个命令会启动容器并在后台运行前提条件已经安装了如果公网访问的话还需要一个域名或地址用于访问一个证书可选但推荐用于保护通信下载并安装从下载仓库如果实在觉得慢或者其他网络原因也有快的办法离线包下载然后上传到服务器不清楚的可以联系我解压打开解压后的文件夹配置修改文件编辑例如修改主机名我这边使用的端口默认端口存储位置等等如果不需要的话把这个选项也注释掉安装运行自动化安装脚本来部署安装完成后服务自动启动访问地址我没有使用域名配置的是端口改为默认账号可以看到以下界面首页使用配置守护进程在客户端上编辑的配置文件通常是添加字段并将的地址添加到该字段中需要配置守护进程以信任的仓库内容大概如下开始结束记得推送和拉取镜像和这两个仓库的登录推送拉取命令基本是一样的如果要推送和拉取镜像一般需要进行登录在客户端上使用命令登录到镜像仓库输入用户名和密码默认是默认没有密码随便输登录服务器地址推送为要推送的本地镜像打上一个新的标签这个标签应该包含仓库的地址项目名和镜像名例如命令服务器地址项目名镜像名命令服务器地址仓库名镜像名示例注意默认端口我设置为最后使用命令将镜像推送到服务器地址项目名镜像名服务器地址项目名镜像名示例推送拉取同样首先确保你已经登录到使用命令从拉取镜像命令格式如下命令服务器地址项目名镜像名命令服务器地址仓库名镜像名这里的服务器地址项目名镜像名和应该与你推送镜像时使用的相同',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-12-12 14:35:52',
+  postMainColor: '',
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#18171d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f7f9fe')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+          const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+          const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+          if (t === undefined) {
+            if (isLightMode) activateLightMode()
+            else if (isDarkMode) activateDarkMode()
+            else if (isNotSpecified || hasNoSupport) {
+              const now = new Date()
+              const hour = now.getHours()
+              const isNight = hour <= 6 || hour >= 18
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addListener(e => {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else if (t === 'light') activateLightMode()
+          else activateDarkMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="程序员七平" type="application/atom+xml">
+</head><body data-type="anzhiyu"><div id="web_bg"></div><div id="an_music_bg"></div><div id="loading-box" onclick="document.getElementById(&quot;loading-box&quot;).classList.add(&quot;loaded&quot;)"><div class="loading-bg"><img class="loading-img nolazyload" alt="加载头像" src="https://npm.elemecdn.com/anzhiyu-blog-static@1.0.4/img/avatar.jpg"/><div class="loading-image-dot"></div></div></div><script>const preloader = {
+  endLoading: () => {
+    document.getElementById('loading-box').classList.add("loaded");
+  },
+  initLoading: () => {
+    document.getElementById('loading-box').classList.remove("loaded")
+  }
+}
+window.addEventListener('load',()=> { preloader.endLoading() })
+setTimeout(function(){preloader.endLoading();},10000)
+
+if (true) {
+  document.addEventListener('pjax:send', () => { preloader.initLoading() })
+  document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+}</script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.10/progress_bar/progress_bar.css"/><script async="async" src="https://cdn.cbd.int/pace-js@1.2.4/pace.min.js" data-pace-options="{ &quot;restartOnRequestAfter&quot;:false,&quot;eventLag&quot;:false}"></script><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><div class="back-home-button"><i class="anzhiyufont anzhiyu-icon-grip-vertical"></i><div class="back-menu-list-groups"><div class="back-menu-list-group"><div class="back-menu-list-title">Github</div><div class="back-menu-list"><a class="back-menu-item" target="_blank" rel="noopener" href="https://github.com/lixiaw" title="Github"><img class="back-menu-item-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/favicon.ico" alt="Github"/><span class="back-menu-item-text">Github</span></a></div></div><div class="back-menu-list-group"><div class="back-menu-list-title">项目</div><div class="back-menu-list"><a class="back-menu-item" target="_blank" rel="noopener" href="https://gitee.com/lixiaw" title="Gitee"><img class="back-menu-item-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/favicon.ico" alt="Gitee"/><span class="back-menu-item-text">Gitee</span></a></div></div></div></div><a id="site-name" href="/" accesskey="h"><div class="title">程序员七平</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/archives/"><i class="anzhiyufont anzhiyu-icon-box-archive faa-tada" style="font-size: 0.9em;"></i><span> 档案室</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 友链</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/link/"><i class="anzhiyufont anzhiyu-icon-link faa-tada" style="font-size: 0.9em;"></i><span> 友人帐</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/comments/"><i class="anzhiyufont anzhiyu-icon-envelope faa-tada" style="font-size: 0.9em;"></i><span> 留言板</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 我的</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/bangumis/"><i class="anzhiyufont anzhiyu-icon-bilibili faa-tada" style="font-size: 0.9em;"></i><span> 追番页</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/about/"><i class="anzhiyufont anzhiyu-icon-paper-plane faa-tada" style="font-size: 0.9em;"></i><span> 关于本人</span></a></li><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div></div><div id="nav-right"><div class="nav-button only-home" id="travellings_button" title="随机前往一个开往项目网站"><a class="site-page" onclick="anzhiyu.totraveling()" title="随机前往一个开往项目网站" href="javascript:void(0);" rel="external nofollow" data-pjax-state="external"><i class="anzhiyufont anzhiyu-icon-train"></i></a></div><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><input id="center-console" type="checkbox"/><label class="widget" for="center-console" title="中控台" onclick="anzhiyu.switchConsole();"><i class="left"></i><i class="widget center"></i><i class="widget right"></i></label><div id="console"><div class="console-card-group-reward"><ul class="reward-all console-card"><li class="reward-item"><a href="/null" target="_blank"><img class="post-qr-code-img" alt="微信" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/null"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/null" target="_blank"><img class="post-qr-code-img" alt="支付宝" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/null"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div><div class="console-card-group"><div class="console-card-group-left"><div class="console-card" id="card-newest-comments"><div class="card-content"><div class="author-content-item-tips">互动</div><span class="author-content-item-title"> 最新评论</span></div><div class="aside-list"><span>正在加载中...</span></div></div></div><div class="console-card-group-right"><div class="console-card tags"><div class="card-content"><div class="author-content-item-tips">兴趣点</div><span class="author-content-item-title">寻找你感兴趣的领域</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/AOP%EF%BC%8C%E6%97%A5%E5%BF%97/" style="font-size: 1.05rem;">AOP，日志<sup>1</sup></a><a href="/tags/Docker/" style="font-size: 1.05rem;">Docker<sup>4</sup></a><a href="/tags/Freemarker/" style="font-size: 1.05rem;">Freemarker<sup>1</sup></a><a href="/tags/Git/" style="font-size: 1.05rem;">Git<sup>1</sup></a><a href="/tags/GitBook/" style="font-size: 1.05rem;">GitBook<sup>1</sup></a><a href="/tags/Java/" style="font-size: 1.05rem; font-weight: 500; color: var(--anzhiyu-lighttext)">Java<sup>2</sup></a><a href="/tags/JavaScript/" style="font-size: 1.05rem;">JavaScript<sup>2</sup></a><a href="/tags/Linux/" style="font-size: 1.05rem;">Linux<sup>3</sup></a><a href="/tags/MySQL/" style="font-size: 1.05rem;">MySQL<sup>3</sup></a><a href="/tags/Oracle/" style="font-size: 1.05rem;">Oracle<sup>2</sup></a><a href="/tags/Quartz/" style="font-size: 1.05rem;">Quartz<sup>3</sup></a><a href="/tags/Spring/" style="font-size: 1.05rem;">Spring<sup>2</sup></a><a href="/tags/Spring-Quartz/" style="font-size: 1.05rem;">Spring Quartz<sup>3</sup></a><a href="/tags/SpringBoot/" style="font-size: 1.05rem;">SpringBoot<sup>2</sup></a><a href="/tags/coding/" style="font-size: 1.05rem;">coding<sup>4</sup></a><a href="/tags/gitalk/" style="font-size: 1.05rem;">gitalk<sup>2</sup></a><a href="/tags/gitee/" style="font-size: 1.05rem;">gitee<sup>1</sup></a><a href="/tags/github/" style="font-size: 1.05rem;">github<sup>4</sup></a><a href="/tags/hexo/" style="font-size: 1.05rem;">hexo<sup>4</sup></a><a href="/tags/java/" style="font-size: 1.05rem;">java<sup>3</sup></a><a href="/tags/jdk1-8/" style="font-size: 1.05rem;">jdk1.8<sup>1</sup></a><a href="/tags/mybatis/" style="font-size: 1.05rem;">mybatis<sup>3</sup></a><a href="/tags/next/" style="font-size: 1.05rem;">next<sup>2</sup></a><a href="/tags/npm/" style="font-size: 1.05rem;">npm<sup>1</sup></a><a href="/tags/spring/" style="font-size: 1.05rem;">spring<sup>4</sup></a><a href="/tags/springmvc/" style="font-size: 1.05rem;">springmvc<sup>3</sup></a><a href="/tags/ssm/" style="font-size: 1.05rem;">ssm<sup>9</sup></a><a href="/tags/tiles/" style="font-size: 1.05rem;">tiles<sup>1</sup></a><a href="/tags/webservice/" style="font-size: 1.05rem;">webservice<sup>2</sup></a><a href="/tags/%E5%89%8D%E7%AB%AF%E6%A1%86%E6%9E%B6/" style="font-size: 1.05rem;">前端框架<sup>1</sup></a><a href="/tags/%E5%B7%A5%E5%85%B7/" style="font-size: 1.05rem;">工具<sup>5</sup></a><a href="/tags/%E5%BC%82%E5%B8%B8/" style="font-size: 1.05rem;">异常<sup>2</sup></a><a href="/tags/%E5%BE%AE%E4%BF%A1/" style="font-size: 1.05rem;">微信<sup>1</sup></a><a href="/tags/%E6%8A%80%E6%9C%AF/" style="font-size: 1.05rem;">技术<sup>1</sup></a><a href="/tags/%E6%8A%A5%E9%94%99/" style="font-size: 1.05rem;">报错<sup>1</sup></a><a href="/tags/%E6%A1%86%E6%9E%B6/" style="font-size: 1.05rem;">框架<sup>15</sup></a><a href="/tags/%E7%A0%81%E4%BA%91/" style="font-size: 1.05rem;">码云<sup>1</sup></a><a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 1.05rem;">笔记<sup>1</sup></a><a href="/tags/%E9%99%80%E6%80%9D%E5%A6%A5%E8%80%B6%E5%A4%AB%E6%96%AF%E5%9F%BA/" style="font-size: 1.05rem;">陀思妥耶夫斯基<sup>1</sup></a><a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 1.05rem;">随笔<sup>38</sup></a></div></div><hr/></div></div><div class="console-card history"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-box-archiv"></i><span>文章</span></div><div class="card-archives"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-archive"></i><span>归档</span><a class="card-more-btn" href="/archives/" title="查看更多">
+    <i class="anzhiyufont anzhiyu-icon-angle-right"></i></a></div><ul class="card-archive-list"><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/12/"><span class="card-archive-list-date">十二月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">1</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/11/"><span class="card-archive-list-date">十一月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">3</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2021/05/"><span class="card-archive-list-date">五月 2021</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">1</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2021/02/"><span class="card-archive-list-date">二月 2021</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">3</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2020/01/"><span class="card-archive-list-date">一月 2020</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2019/12/"><span class="card-archive-list-date">十二月 2019</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">7</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2019/11/"><span class="card-archive-list-date">十一月 2019</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">1</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2019/10/"><span class="card-archive-list-date">十月 2019</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">2</span><span>篇</span></div></a></li></ul></div><hr/></div></div></div><div class="button-group"><div class="console-btn-item"><a class="darkmode_switchbutton" title="显示模式切换" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-moon"></i></a></div><div class="console-btn-item" id="consoleHideAside" onclick="anzhiyu.hideAsideBtn()" title="边栏显示控制"><a class="asideSwitch"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></a></div></div><div class="console-mask" onclick="anzhiyu.hideConsole()" href="javascript:void(0);"></div></div><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/Docker/" itemprop="url">Docker</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/Docker/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>Docker</span></a></span></div></div><h1 class="post-title" itemprop="name headline">解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2024-12-04T01:51:54.000Z" title="发表于 2024-12-04 09:51:54">2024-12-04</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2024-12-12T06:35:52.955Z" title="更新于 2024-12-12 14:35:52">2024-12-12</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">1.8k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>6分钟</span></span><span class="post-meta-separator"></span><span id="" data-flag-title="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="twikoo_visitors" title="访问量"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为西安"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>西安</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src="/images/posts/docker/1/0.jpg"></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="https://lixiaw.github.io/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html"><header><a class="post-meta-categories" href="/categories/Docker/" itemprop="url">Docker</a><a href="/tags/Docker/" tabindex="-1" itemprop="url">Docker</a><h1 id="CrawlerTitle" itemprop="name headline">解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">程序员七平</span><time itemprop="dateCreated datePublished" datetime="2024-12-04T01:51:54.000Z" title="发表于 2024-12-04 09:51:54">2024-12-04</time><time itemprop="dateCreated datePublished" datetime="2024-12-12T06:35:52.955Z" title="更新于 2024-12-12 14:35:52">2024-12-12</time></header><h1 id="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库"><a href="#解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库" class="headerlink" title="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库"></a>解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库</h1><p>本文主要针对适用于个人的镜像仓库<code>Registry</code>和适用于企业的镜像仓库<code>Harbor</code> 做介绍。</p>
+<p>先看看搭建私有化镜像仓库能解决什么问题？</p>
+<h2 id="1-搭建Docker私有化仓库能解决什么问题？"><a href="#1-搭建Docker私有化仓库能解决什么问题？" class="headerlink" title="1.搭建Docker私有化仓库能解决什么问题？"></a>1.搭建Docker私有化仓库能解决什么问题？</h2><ol>
+<li><strong>镜像拉取、下载慢</strong>：从本地私有仓库下载镜像比从远程公共仓库下载要快得多，因为数据传输的延迟和带宽限制被大大降低。（个人使用很重要）</li>
+<li><strong>节省网络带宽</strong>：私有仓库允许用户在本地网络内下载和分发Docker镜像，因此能够尽量避免从远程公共仓库进行下载。（个人使用很重要）</li>
+<li><strong>增强安全性</strong>：私有化仓库允许对镜像进行更严格的安全控制和审计、进行更细粒度的访问权限限制，确保只有授权用户才能下载和上传镜像。</li>
+<li><strong>镜像的统一管理和分发</strong>：私有仓库使得Docker镜像的管理和分发更加集中和统一，管理员可以轻松地管理不同版本和标签的镜像，确保团队成员使用一致的镜像版本。</li>
+</ol>
+<p>如果平时使用过程中有使用的比较好的镜像，可以拉取下来，然后推送到自己的仓库收藏一下。有时候想用的时候又拉取不下来，很是折腾、费时间。</p>
+<h2 id="2-常用私有化镜像仓库介绍"><a href="#2-常用私有化镜像仓库介绍" class="headerlink" title="2.常用私有化镜像仓库介绍"></a>2.常用私有化镜像仓库介绍</h2><h3 id="2-1-Docker官方Registry镜像"><a href="#2-1-Docker官方Registry镜像" class="headerlink" title="2.1 Docker官方Registry镜像"></a>2.1 Docker官方Registry镜像</h3><blockquote>
+<p>Docker官方Registry镜像是一个开源的、轻量级的Docker镜像仓库解决方案。它提供了基本的镜像存储和分发功能，是Docker官方推荐的私有仓库搭建方式之一。</p>
+</blockquote>
+<p><strong>适用场景</strong>：一个简单、轻量级的Docker私有仓库，适用于<strong>小型团队</strong>或<strong>个人开发者</strong>，对镜像管理功能要求不高，主要关注基本的镜像存储和分发；</p>
+<p><strong>注意：Registry：本身默认并不提供图形化界面</strong></p>
+<h3 id="2-2-Harbor"><a href="#2-2-Harbor" class="headerlink" title="2.2 Harbor"></a>2.2 Harbor</h3><blockquote>
+<p>Harbor是一个企业级的Docker Registry服务器，由VMware开源并维护。</p>
+</blockquote>
+<p><strong>适用场景</strong>：</p>
+<ul>
+<li><p>一个功能全面的Docker私有仓库，适用于<strong>中大型企业或团队</strong>；</p>
+</li>
+<li><p>对用户和镜像进行细粒度的权限控制；</p>
+</li>
+<li><p>对镜像的安全性、可靠性和性能有较高要求；</p>
+</li>
+<li><p>需要与CI&#x2F;CD系统集成，实现自动化构建和部署；</p>
+</li>
+</ul>
+<h2 id="3-安装部署（compose方式）"><a href="#3-安装部署（compose方式）" class="headerlink" title="3.安装部署（compose方式）"></a>3.安装部署（compose方式）</h2><p>本文安装优先采用<code>docker compose</code>方式进行安装部署，如果有不清楚的，可以去看前面的文章。</p>
+<h3 id="3-1-Docker-Registry和Docker-registry-ui"><a href="#3-1-Docker-Registry和Docker-registry-ui" class="headerlink" title="3.1 Docker Registry和Docker-registry-ui"></a>3.1 Docker Registry和Docker-registry-ui</h3><p>前提条件：已经安装了docker。</p>
+<p>1、docker-compose.yml文件示例内容：</p>
+<p>解释：</p>
+<p>① 定义了一个名为<code>my-registry</code>的服务，它使用官方的<code>registry</code>镜像，并在容器内运行。容器内的5000端口被映射到宿主机的15000端口，同时，<code>./data</code>目录被用作镜像的存储位置</p>
+<p>② 定义了一个名为<code>my-registry-ui</code>的服务</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">my-registry:</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="comment">#image: registry</span></span><br><span class="line">    <span class="comment"># 如果拉取不下来，可以用下面的加速地址</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">dockerproxy.net/library/registry:latest</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">my-registry</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;15000:5000&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;./data:/var/lib/registry&quot;</span></span><br><span class="line">  <span class="comment"># 图形化界面</span></span><br><span class="line">  <span class="attr">my-registry-ui:</span></span><br><span class="line">    <span class="comment">#image: joxit/docker-registry-ui:1.5-static</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">dockerproxy.net/joxit/docker-registry-ui:1.5-static</span></span><br><span class="line">    <span class="comment"># 或者使用特定的版本，例如 joxit/docker-registry-ui:1.5-static</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">my-registry-ui</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">18080</span><span class="string">:80</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">REGISTRY_TITLE=My</span> <span class="string">Private</span> <span class="string">Registry</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">REGISTRY_URL=http://my-registry:5000</span></span><br><span class="line">      <span class="comment"># 可选：设置CATALOG_ELEMENTS_LIMIT来限制UI中显示的镜像数量</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">CATALOG_ELEMENTS_LIMIT=&quot;1000&quot;</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-registry</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>启动服务</li>
+</ol>
+<p>在<code>docker-compose.yml</code>文件所在的目录下，运行以下命令来启动服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure>
+
+<p>这个命令会启动Docker Registry容器，并在后台运行。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/4/1_registry.png"></p>
+<h3 id="3-2-Harbor"><a href="#3-2-Harbor" class="headerlink" title="3.2 Harbor"></a>3.2 Harbor</h3><p>前提条件：已经安装了docker。</p>
+<p>PS:如果公网访问的话，还需要：</p>
+<ul>
+<li>一个域名或IP地址，用于访问Harbor；</li>
+<li>一个SSL证书（可选，但推荐用于保护通信）；</li>
+</ul>
+<ol>
+<li>下载<code>harbor</code>并安装</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 从github下载harbor仓库（如果实在觉得慢或者其他网络原因，也有快的办法：离线包下载然后上传到服务器。不清楚的可以联系我）</span></span><br><span class="line">wget https://github.com/goharbor/harbor/releases/download/v2.11.2/harbor-offline-installer-v2.11.2.tgz</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2.解压</span></span><br><span class="line">tar xvf harbor-offline-installer-v2.11.2.tgz</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3.打开解压后的文件夹</span></span><br><span class="line"><span class="built_in">cd</span> harbor</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 配置Harbor（修改harbor.yml文件）</span></span><br><span class="line"><span class="built_in">cp</span> harbor.yml.tmpl harbor.yml</span><br><span class="line"><span class="comment"># 编辑harbor.yml，例如修改hostname主机名（我这边使用的127.0.0.1）、端口（默认80端口）、存储位置等等</span></span><br><span class="line"><span class="comment"># 如果不需要HTTPS的话，把这个选项也注释掉。</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 5. 安装Harbor（运行自动化安装脚本来部署Harbor）</span></span><br><span class="line">./install.sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>安装完成后服务自动启动：</li>
+</ol>
+<p>访问地址（我没有使用域名，配置的是IP、端口改为8314）：<a target="_blank" rel="noopener" href="http://hostname:8314/%EF%BC%8C%E9%BB%98%E8%AE%A4%E8%B4%A6%E5%8F%B7%EF%BC%9Aadmin/Harbor12345%E3%80%82">http://hostname:8314/，默认账号：admin/Harbor12345。</a></p>
+<p>可以看到以下界面。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/4/1_harbor%E7%99%BB%E5%BD%95%E9%A1%B5.png"></p>
+<p>首页：</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/4/2_harbor%E9%A6%96%E9%A1%B5.png"></p>
+<h2 id="4-使用"><a href="#4-使用" class="headerlink" title="4.使用"></a>4.使用</h2><h3 id="4-1-配置Docker守护进程（在Docker客户端上）"><a href="#4-1-配置Docker守护进程（在Docker客户端上）" class="headerlink" title="4.1 配置Docker守护进程（在Docker客户端上）"></a>4.1 配置Docker守护进程（在Docker客户端上）</h3><ul>
+<li>编辑Docker的配置文件（通常是<code>/etc/docker/daemon.json</code>），添加<code>insecure-registries</code>字段，并将Harbor的地址添加到该字段中。</li>
+<li>需要配置Docker守护进程以信任Harbor&#x2F;Registry的仓库。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/docker/daemon.json</span><br><span class="line"></span><br><span class="line"><span class="comment">## 内容大概如下</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">#################开始##################</span></span><br><span class="line">  <span class="string">&quot;insecure-registries&quot;</span>: [</span><br><span class="line">    <span class="string">&quot;192.168.1.153:8314&quot;</span></span><br><span class="line">  ],</span><br><span class="line">  <span class="comment">#################结束##################</span></span><br><span class="line"></span><br><span class="line">  <span class="string">&quot;registry-mirrors&quot;</span>: [</span><br><span class="line">                <span class="string">&quot;https://dockerproxy.com&quot;</span></span><br><span class="line">        ]</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>记得</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart docker</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-2-推送和拉取镜像-Docker-Registry和Harbor"><a href="#4-2-推送和拉取镜像-Docker-Registry和Harbor" class="headerlink" title="4.2 推送和拉取镜像(Docker Registry和Harbor)"></a>4.2 推送和拉取镜像(Docker Registry和Harbor)</h3><p>这两个仓库的登录、推送、拉取命令基本是一样的。</p>
+<ol>
+<li>如果要推送和拉取镜像，一般需要进行登录：</li>
+</ol>
+<ul>
+<li>在Docker客户端上，使用docker login命令登录到镜像仓库。</li>
+<li>输入用户名和密码（Harbor默认是admin&#x2F;Harbor12345；Docker Registry 默认没有密码，随便输）。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 登录Harbor，docker login harbor.example.com</span></span><br><span class="line">docker login &lt;Harbor/Docker Registry服务器地址&gt;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>推送</li>
+</ol>
+<p>为要推送的本地镜像打上一个新的标签（Tag），这个标签应该包含仓库的地址、项目名和镜像名。例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Harbor 命令</span></span><br><span class="line">docker tag your-image-name:tag registry.&lt;Harbor服务器地址&gt;/&lt;项目名&gt;/&lt;镜像名&gt;:tag</span><br><span class="line"></span><br><span class="line"><span class="comment"># Docker Registry命令</span></span><br><span class="line">docker tag your-image-name:tag &lt;Docker Registry服务器地址&gt;/&lt;仓库名&gt;/&lt;镜像名&gt;:tag</span><br><span class="line"></span><br><span class="line"><span class="comment">## 示例（注意：默认端口5000，我设置为15000）：docker tag grafana/grafana:9.2.4 192.168.1.153:15000/my_registry/grafana:9.2.4</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>最后，使用<code>docker push</code>命令将镜像推送到Harbor&#x2F;Docker Registry：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Harbor</span></span><br><span class="line">docker push registry.&lt;Harbor服务器地址&gt;/&lt;项目名&gt;/&lt;镜像名&gt;:tag</span><br><span class="line"></span><br><span class="line"><span class="comment"># Registry</span></span><br><span class="line">docker push &lt;Docker Registry服务器地址&gt;/&lt;项目名&gt;/&lt;镜像名&gt;:tag</span><br><span class="line"></span><br><span class="line"><span class="comment">## 示例：docker push 192.168.1.153:15000/my_registry/grafana:9.2.4</span></span><br></pre></td></tr></table></figure>
+
+<p>Docker Registry 推送：</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/4/2_registry%E6%8E%A8%E9%80%81%E5%90%8E.png"></p>
+<ol start="3">
+<li>拉取</li>
+</ol>
+<p>同样，首先确保你已经登录到Harbor。</p>
+<p>使用<code>docker pull</code>命令从Harbor拉取镜像。命令格式如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Harbor命令</span></span><br><span class="line">docker pull registry.&lt;Harbor服务器地址&gt;/&lt;项目名&gt;/&lt;镜像名&gt;:tag</span><br><span class="line"></span><br><span class="line"><span class="comment">#Docker Registry命令</span></span><br><span class="line">docker pull &lt;Docker Registry服务器地址&gt;/&lt;仓库名&gt;/&lt;镜像名&gt;:tag</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>&lt;Harbor/Docker Registry服务器地址&gt;</code>、<code>&lt;项目名&gt;</code>、<code>&lt;镜像名&gt;</code>和<code>:tag</code>应该与你推送镜像时使用的相同。</p>
+</article><div class="post-copyright"><div class="copyright-cc-box"><i class="anzhiyufont anzhiyu-icon-copyright"></i></div><div class="post-copyright__author_box"><a class="post-copyright__author_img" href="/" title="头像"><img class="post-copyright__author_img_back" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/static/img/wechat_lx_logo.png" title="头像" alt="头像"><img class="post-copyright__author_img_front" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/static/img/wechat_lx_logo.png" title="头像" alt="头像"></a><div class="post-copyright__author_name">程序员七平</div><div class="post-copyright__author_desc">日拱一卒</div></div><div class="post-copyright__post__info"><a class="post-copyright__original" title="该文章为原创文章，注意版权协议" href="https://lixiaw.github.io/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html">原创</a><a class="post-copyright-title"><span onclick="rm.copyPageUrl('https://lixiaw.github.io/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html')">解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库</span></a></div><div class="post-tools" id="post-tools"><div class="post-tools-left"><div class="rewardLeftButton"><div class="post-reward" onclick="anzhiyu.addRewardMask()"><div class="reward-button button--animated" title="赞赏作者"><i class="anzhiyufont anzhiyu-icon-hand-heart-fill"></i>打赏作者</div><div class="reward-main"><div class="reward-all"><span class="reward-title">感谢你赐予我前进的力量</span><ul class="reward-group"><li class="reward-item"><a href="/null" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/null" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/null" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/null" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul><a class="reward-main-btn" href="/about/#about-reward" target="_blank"><div class="reward-text">赞赏者名单</div><div class="reward-dec">因为你们的支持让我意识到写文章的价值🙏</div></a></div></div></div><div id="quit-box" onclick="anzhiyu.removeRewardMask()" style="display: none"></div></div><div class="shareRight"><div class="share-link mobile"><div class="share-qrcode"><div class="share-button" title="使用手机访问这篇文章"><i class="anzhiyufont anzhiyu-icon-qrcode"></i></div><div class="share-main"><div class="share-main-all"><div id="qrcode" title="https://lixiaw.github.io/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html"></div><div class="reward-dec">使用手机访问这篇文章</div></div></div></div></div><div class="share-link weibo"><a class="share-button" target="_blank" href="https://service.weibo.com/share/share.php?title=解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库&amp;url=https://lixiaw.github.io/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html&amp;pic=/images/posts/docker/1/0.jpg" rel="external nofollow noreferrer noopener"><i class="anzhiyufont anzhiyu-icon-weibo"></i></a></div><script>function copyCurrentPageUrl() {
+  var currentPageUrl = window.location.href;
+  var input = document.createElement("input");
+  input.setAttribute("value", currentPageUrl);
+  document.body.appendChild(input);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  document.execCommand("copy");
+  document.body.removeChild(input);
+}</script><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="copyCurrentPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://lixiaw.github.io" target="_blank">程序员七平</a>！</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/Docker/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>Docker<span class="tagsPageCount">4</span></a></div></div></div><div class="post_share"><div class="social-share" data-image="/images/posts/docker/1/0.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.cbd.int/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"/><script src="https://cdn.cbd.int/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer="defer"></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-full"><a href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/3_Docker%EF%BC%9ADocker%E5%B7%A5%E5%85%B7%E4%B9%8B%E5%8F%AF%E8%A7%86%E5%8C%96%E6%93%8D%E4%BD%9Cportainer%E4%BB%8B%E7%BB%8D.html"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/1/0.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Docker工具之可视化操作portainer介绍</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="anzhiyufont anzhiyu-icon-thumbs-up fa-fw" style="font-size: 1.5rem; margin-right: 4px"></i><span>喜欢这篇文章的人也看了</span></div><div class="relatedPosts-list"><div><a href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/2_Docker%EF%BC%9A%E5%9C%A8%E5%9B%BD%E4%BA%A7%E6%AC%A7%E6%8B%89%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2%E5%8F%8Adocker%E5%92%8Cdocker%20compose%E4%BD%BF%E7%94%A8.html" title="Docker：在国产欧拉系统安装部署及docker和docker compose使用，附常用命令【建议收藏】"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/1/0.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2024-11-20</div><div class="title">Docker：在国产欧拉系统安装部署及docker和docker compose使用，附常用命令【建议收藏】</div></div></a></div><div><a href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/1_Docker%E4%BB%8B%E7%BB%8D%E5%92%8Cdocker%E9%87%8D%E5%A4%A7%E7%89%88%E6%9C%AC%E5%8F%98%E6%9B%B4%E5%8E%86%E5%8F%B2.html" title="Docker介绍和重大版本变更历史"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/1/0.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2024-11-19</div><div class="title">Docker介绍和重大版本变更历史</div></div></a></div><div><a href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/3_Docker%EF%BC%9ADocker%E5%B7%A5%E5%85%B7%E4%B9%8B%E5%8F%AF%E8%A7%86%E5%8C%96%E6%93%8D%E4%BD%9Cportainer%E4%BB%8B%E7%BB%8D.html" title="Docker工具之可视化操作portainer介绍"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/1/0.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2024-11-21</div><div class="title">Docker工具之可视化操作portainer介绍</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="anzhiyufont anzhiyu-icon-comments"></i><span> 评论</span></div><div class="comment-randomInfo"><a onclick="anzhiyu.addRandomCommentInfo()" href="javascript:void(0)">匿名评论</a><a href="/privacy" style="margin-left: 4px">隐私政策</a></div><div class="comment-switch"><span class="first-comment">Twikoo</span><span id="switch-btn"></span><span class="second-comment">Waline</span></div><div class="comment-tips" id="comment-tips"><span>✅ 你无需删除空行，直接评论以获取最佳展示效果</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div><div><div id="waline-wrap"></div></div></div></div><div class="comment-barrage"></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/static/img/wechat_lx_logo.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__description">[程序员七平]技术分享博客</div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">程序员七平</h1><div class="author-info__desc">日拱一卒</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://github.com/lixiaw" target="_blank" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a><a class="social-icon faa-parent animated-hover" href="https://space.bilibili.com/102822121" target="_blank" title="BiliBili"><i class="anzhiyufont anzhiyu-icon-bilibili"></i></a></div></div></div></div><div class="card-widget anzhiyu-right-widget" id="card-wechat" onclick="null"><div id="flip-wrapper"><div id="flip-content"><div class="face" style="background: url(static/img/wechat_face.png) center center / 100% no-repeat"></div><div class="back face" style="background: url(static/img/wechat_face_qrcode.png) center center / 100% no-repeat"></div></div></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93"><span class="toc-number">1.</span> <span class="toc-text">解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%90%AD%E5%BB%BADocker%E7%A7%81%E6%9C%89%E5%8C%96%E4%BB%93%E5%BA%93%E8%83%BD%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="toc-number">1.1.</span> <span class="toc-text">1.搭建Docker私有化仓库能解决什么问题？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B8%B8%E7%94%A8%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.2.</span> <span class="toc-text">2.常用私有化镜像仓库介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Docker%E5%AE%98%E6%96%B9Registry%E9%95%9C%E5%83%8F"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 Docker官方Registry镜像</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Harbor"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Harbor</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2%EF%BC%88compose%E6%96%B9%E5%BC%8F%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3.安装部署（compose方式）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Docker-Registry%E5%92%8CDocker-registry-ui"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Docker Registry和Docker-registry-ui</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Harbor"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Harbor</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BD%BF%E7%94%A8"><span class="toc-number">1.4.</span> <span class="toc-text">4.使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E9%85%8D%E7%BD%AEDocker%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%EF%BC%88%E5%9C%A8Docker%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%B8%8A%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 配置Docker守护进程（在Docker客户端上）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E6%8E%A8%E9%80%81%E5%92%8C%E6%8B%89%E5%8F%96%E9%95%9C%E5%83%8F-Docker-Registry%E5%92%8CHarbor"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 推送和拉取镜像(Docker Registry和Harbor)</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html" title="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/1/0.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库"/></a><div class="content"><a class="title" href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/4_Docker%EF%BC%9A%E8%A7%A3%E5%86%B3%E4%BB%8E%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%95%85%E9%97%AE%E9%A2%98%EF%BC%8C%E6%90%AD%E5%BB%BA%E7%A7%81%E6%9C%89%E5%8C%96%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93.html" title="解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库">解决从官方仓库下载网络不通畅问题，搭建私有化镜像仓库</a><time datetime="2024-12-04T01:51:54.000Z" title="发表于 2024-12-04 09:51:54">2024-12-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/3_Docker%EF%BC%9ADocker%E5%B7%A5%E5%85%B7%E4%B9%8B%E5%8F%AF%E8%A7%86%E5%8C%96%E6%93%8D%E4%BD%9Cportainer%E4%BB%8B%E7%BB%8D.html" title="Docker工具之可视化操作portainer介绍"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/1/0.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Docker工具之可视化操作portainer介绍"/></a><div class="content"><a class="title" href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/3_Docker%EF%BC%9ADocker%E5%B7%A5%E5%85%B7%E4%B9%8B%E5%8F%AF%E8%A7%86%E5%8C%96%E6%93%8D%E4%BD%9Cportainer%E4%BB%8B%E7%BB%8D.html" title="Docker工具之可视化操作portainer介绍">Docker工具之可视化操作portainer介绍</a><time datetime="2024-11-21T01:51:54.000Z" title="发表于 2024-11-21 09:51:54">2024-11-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/2_Docker%EF%BC%9A%E5%9C%A8%E5%9B%BD%E4%BA%A7%E6%AC%A7%E6%8B%89%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2%E5%8F%8Adocker%E5%92%8Cdocker%20compose%E4%BD%BF%E7%94%A8.html" title="Docker：在国产欧拉系统安装部署及docker和docker compose使用，附常用命令【建议收藏】"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/1/0.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Docker：在国产欧拉系统安装部署及docker和docker compose使用，附常用命令【建议收藏】"/></a><div class="content"><a class="title" href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/2_Docker%EF%BC%9A%E5%9C%A8%E5%9B%BD%E4%BA%A7%E6%AC%A7%E6%8B%89%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2%E5%8F%8Adocker%E5%92%8Cdocker%20compose%E4%BD%BF%E7%94%A8.html" title="Docker：在国产欧拉系统安装部署及docker和docker compose使用，附常用命令【建议收藏】">Docker：在国产欧拉系统安装部署及docker和docker compose使用，附常用命令【建议收藏】</a><time datetime="2024-11-20T01:51:54.000Z" title="发表于 2024-11-20 09:51:54">2024-11-20</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/1_Docker%E4%BB%8B%E7%BB%8D%E5%92%8Cdocker%E9%87%8D%E5%A4%A7%E7%89%88%E6%9C%AC%E5%8F%98%E6%9B%B4%E5%8E%86%E5%8F%B2.html" title="Docker介绍和重大版本变更历史"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/images/posts/docker/1/0.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Docker介绍和重大版本变更历史"/></a><div class="content"><a class="title" href="/%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8/docker/1_Docker%E4%BB%8B%E7%BB%8D%E5%92%8Cdocker%E9%87%8D%E5%A4%A7%E7%89%88%E6%9C%AC%E5%8F%98%E6%9B%B4%E5%8E%86%E5%8F%B2.html" title="Docker介绍和重大版本变更历史">Docker介绍和重大版本变更历史</a><time datetime="2024-11-19T01:51:54.000Z" title="发表于 2024-11-19 09:51:54">2024-11-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024_bf/%E6%9C%8D%E5%8A%A1%E7%AB%AF/Java/Java%E7%B3%BB%E5%88%97-SpringBoot-1-%E5%85%A5%E5%8F%82%E5%8F%8A%E5%87%BA%E5%8F%82%E6%89%A9%E5%B1%95XML%E6%94%AF%E6%8C%81.html" title="Java系列-SpringBoot-1-入参及出参扩展XML支持"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/default_cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Java系列-SpringBoot-1-入参及出参扩展XML支持"/></a><div class="content"><a class="title" href="/2024_bf/%E6%9C%8D%E5%8A%A1%E7%AB%AF/Java/Java%E7%B3%BB%E5%88%97-SpringBoot-1-%E5%85%A5%E5%8F%82%E5%8F%8A%E5%87%BA%E5%8F%82%E6%89%A9%E5%B1%95XML%E6%94%AF%E6%8C%81.html" title="Java系列-SpringBoot-1-入参及出参扩展XML支持">Java系列-SpringBoot-1-入参及出参扩展XML支持</a><time datetime="2021-05-09T10:51:10.000Z" title="发表于 2021-05-09 18:51:10">2021-05-09</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div id="footer_deal"><a class="deal_link" href="mailto:lixiahanyu@outlook.com" title="email"><i class="anzhiyufont anzhiyu-icon-envelope"></i></a><a class="deal_link" href="/atom.xml" title="RSS"><i class="anzhiyufont anzhiyu-icon-rss"></i></a><img class="footer_mini_logo" title="返回顶部" alt="返回顶部" onclick="anzhiyu.scrollToDest(0, 500)" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/static/img/wechat_lx_logo.png" size="50px"/><a class="deal_link" target="_blank" rel="noopener" href="https://github.com/lixiaw" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a><a class="deal_link" target="_blank" rel="noopener" href="https://space.bilibili.com/102822121" title="Bilibili"><i class="anzhiyufont anzhiyu-icon-bilibili"></i></a></div><div id="anzhiyu-footer"><div class="footer-group"><div class="footer-title">服务</div><div class="footer-links"><a class="footer-item" title="51la统计" target="_blank" rel="noopener" href="https://v6.51.la/">51la统计</a><a class="footer-item" title="开往" target="_blank" rel="noopener" href="https://github.com/travellings-link/travellings">开往</a></div></div><div class="footer-group"><div class="footer-title">主题</div><div class="footer-links"><a class="footer-item" title="源码" target="_blank" rel="noopener" href="https://github.com/anzhiyu-c/hexo-theme-anzhiyu">源码</a></div></div><div class="footer-group"><div class="footer-title">导航</div><div class="footer-links"><a class="footer-item" title="留言板" href="/comments/">留言板</a></div></div><div class="footer-group"><div class="footer-title-group"><div class="footer-title">友链</div><a class="random-friends-btn" id="footer-random-friends-btn" href="javascript:addFriendLinksInFooter();" title="换一批友情链接"><i class="anzhiyufont anzhiyu-icon-arrow-rotate-right"></i></a></div><div class="footer-links" id="friend-links-in-footer"></div></div></div></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2020 - 2024 By <a class="footer-bar-link" href="/" title="程序员七平" target="_blank">程序员七平</a></div></div><div id="footer-type-tips"></div></div><div class="footer-bar-right"><a class="footer-bar-link" target="_blank" rel="noopener" href="https://github.com/anzhiyu-c/hexo-theme-anzhiyu" title="主题">主题</a></div></div></div></footer></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="sidebar-site-data site-data is-center"><a href="/archives/" title="archive"><div class="headline">文章</div><div class="length-num">87</div></a><a href="/tags/" title="tag"><div class="headline">标签</div><div class="length-num">69</div></a><a href="/categories/" title="category"><div class="headline">分类</div><div class="length-num">7</div></a></div><span class="sidebar-menu-item-title">功能</span><div class="sidebar-menu-item"><a class="darkmode_switchbutton menu-child" href="javascript:void(0);" title="显示模式"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span>显示模式</span></a></div><div class="back-menu-list-groups"><div class="back-menu-list-group"><div class="back-menu-list-title">Github</div><div class="back-menu-list"><a class="back-menu-item" target="_blank" rel="noopener" href="https://github.com/lixiaw" title="Github"><img class="back-menu-item-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/favicon.ico" alt="Github"/><span class="back-menu-item-text">Github</span></a></div></div><div class="back-menu-list-group"><div class="back-menu-list-title">项目</div><div class="back-menu-list"><a class="back-menu-item" target="_blank" rel="noopener" href="https://gitee.com/lixiaw" title="Gitee"><img class="back-menu-item-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/favicon.ico" alt="Gitee"/><span class="back-menu-item-text">Gitee</span></a></div></div></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/archives/"><i class="anzhiyufont anzhiyu-icon-box-archive faa-tada" style="font-size: 0.9em;"></i><span> 档案室</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 友链</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/link/"><i class="anzhiyufont anzhiyu-icon-link faa-tada" style="font-size: 0.9em;"></i><span> 友人帐</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/comments/"><i class="anzhiyufont anzhiyu-icon-envelope faa-tada" style="font-size: 0.9em;"></i><span> 留言板</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 我的</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/bangumis/"><i class="anzhiyufont anzhiyu-icon-bilibili faa-tada" style="font-size: 0.9em;"></i><span> 追番页</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/about/"><i class="anzhiyufont anzhiyu-icon-paper-plane faa-tada" style="font-size: 0.9em;"></i><span> 关于本人</span></a></li><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div><span class="sidebar-menu-item-title">标签</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/coding/" style="font-size: 0.88rem;">coding<sup>4</sup></a><a href="/tags/gitalk/" style="font-size: 0.88rem;">gitalk<sup>2</sup></a><a href="/tags/gitee/" style="font-size: 0.88rem;">gitee<sup>1</sup></a><a href="/tags/github/" style="font-size: 0.88rem;">github<sup>4</sup></a><a href="/tags/hexo/" style="font-size: 0.88rem;">hexo<sup>4</sup></a><a href="/tags/next/" style="font-size: 0.88rem;">next<sup>2</sup></a><a href="/tags/%E5%B7%A5%E5%85%B7/" style="font-size: 0.88rem;">工具<sup>5</sup></a><a href="/tags/%E6%8A%A5%E9%94%99/" style="font-size: 0.88rem;">报错<sup>1</sup></a><a href="/tags/%E7%A0%81%E4%BA%91/" style="font-size: 0.88rem;">码云<sup>1</sup></a><a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 0.88rem;">随笔<sup>38</sup></a></div></div><hr/></div></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="anzhiyufont anzhiyu-icon-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="anzhiyufont anzhiyu-icon-gear"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="anzhiyufont anzhiyu-icon-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="anzhiyufont anzhiyu-icon-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></button></div></div><div id="rightMenu"><div class="rightMenu-group rightMenu-small"><div class="rightMenu-item" id="menu-backward"><i class="anzhiyufont anzhiyu-icon-arrow-left"></i></div><div class="rightMenu-item" id="menu-forward"><i class="anzhiyufont anzhiyu-icon-arrow-right"></i></div><div class="rightMenu-item" id="menu-refresh"><i class="anzhiyufont anzhiyu-icon-arrow-rotate-right" style="font-size: 1rem;"></i></div><div class="rightMenu-item" id="menu-top"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></div></div><div class="rightMenu-group rightMenu-line rightMenuPlugin"><div class="rightMenu-item" id="menu-copytext"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制选中文本</span></div><div class="rightMenu-item" id="menu-pastetext"><i class="anzhiyufont anzhiyu-icon-paste"></i><span>粘贴文本</span></div><a class="rightMenu-item" id="menu-commenttext"><i class="anzhiyufont anzhiyu-icon-comment-medical"></i><span>引用到评论</span></a><div class="rightMenu-item" id="menu-newwindow"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开</span></div><div class="rightMenu-item" id="menu-copylink"><i class="anzhiyufont anzhiyu-icon-link"></i><span>复制链接地址</span></div><div class="rightMenu-item" id="menu-copyimg"><i class="anzhiyufont anzhiyu-icon-images"></i><span>复制此图片</span></div><div class="rightMenu-item" id="menu-downloadimg"><i class="anzhiyufont anzhiyu-icon-download"></i><span>下载此图片</span></div><div class="rightMenu-item" id="menu-newwindowimg"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开图片</span></div><div class="rightMenu-item" id="menu-search"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>站内搜索</span></div><div class="rightMenu-item" id="menu-searchBaidu"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>百度搜索</span></div><div class="rightMenu-item" id="menu-music-toggle"><i class="anzhiyufont anzhiyu-icon-play"></i><span>播放音乐</span></div><div class="rightMenu-item" id="menu-music-back"><i class="anzhiyufont anzhiyu-icon-backward"></i><span>切换到上一首</span></div><div class="rightMenu-item" id="menu-music-forward"><i class="anzhiyufont anzhiyu-icon-forward"></i><span>切换到下一首</span></div><div class="rightMenu-item" id="menu-music-playlist" onclick="window.open(&quot;https://music.163.com/playlist?id=12870080318&amp;uct2=U2FsdGVkX1+mtn8382D821OCTVyOYnu1uiyRm+smlVI=&quot;, &quot;_blank&quot;);" style="display: none;"><i class="anzhiyufont anzhiyu-icon-radio"></i><span>查看所有歌曲</span></div><div class="rightMenu-item" id="menu-music-copyMusicName"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制歌名</span></div></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item menu-link" id="menu-randomPost"><i class="anzhiyufont anzhiyu-icon-shuffle"></i><span>随便逛逛</span></a><a class="rightMenu-item menu-link" href="/categories/"><i class="anzhiyufont anzhiyu-icon-cube"></i><span>博客分类</span></a><a class="rightMenu-item menu-link" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags"></i><span>文章标签</span></a></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item" id="menu-copy" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制地址</span></a><a class="rightMenu-item" id="menu-commentBarrage" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-message"></i><span class="menu-commentBarrage-text">关闭热评</span></a><a class="rightMenu-item" id="menu-darkmode" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span class="menu-darkmode-text">深色模式</span></a><a class="rightMenu-item" id="menu-translate" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-language"></i><span>轉為繁體</span></a></div></div><div id="rightmenu-mask"></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.cbd.int/@fancyapps/ui@5.0.28/dist/fancybox/fancybox.umd.js"></script><script src="https://cdn.cbd.int/instant.page@5.2.0/instantpage.js" type="module"></script><script src="https://cdn.cbd.int/vanilla-lazyload@17.8.5/dist/lazyload.iife.min.js"></script><script src="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.js"></script><script>function panguFn () {
+  if (typeof pangu === 'object') pangu.autoSpacingPage()
+  else {
+    getScript('https://cdn.cbd.int/pangu@4.0.7/dist/browser/pangu.min.js')
+      .then(() => {
+        pangu.autoSpacingPage()
+      })
+  }
+}
+
+function panguInit () {
+  if (true){
+    GLOBAL_CONFIG_SITE.isPost && panguFn()
+  } else {
+    panguFn()
+  }
+}
+
+document.addEventListener('DOMContentLoaded', panguInit)</script><canvas id="universe"></canvas><script async src="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/dark/dark.js"></script><script async src="/anzhiyu/random.js"></script><div class="js-pjax"><script>(() => {
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://blog-smoky-ten.vercel.app/',
+      region: '',
+      onCommentLoaded: () => {
+        anzhiyu.loadLightbox(document.querySelectorAll('#twikoo .tk-content img:not(.tk-owo-emotion)'))
+      }
+    }, null))
+  }
+
+  const loadTwikoo = () => {
+    if (typeof twikoo === 'object') setTimeout(runFn,0)
+    else getScript('https://cdn.cbd.int/twikoo@1.6.39/dist/twikoo.all.min.js').then(runFn)
+  }
+
+  const getCount = () => {
+    const countELement = document.getElementById('twikoo-count')
+    if(!countELement) return
+    twikoo.getCommentsCount({
+      envId: 'https://blog-smoky-ten.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(res => {
+      countELement.textContent = res[0].count
+    }).catch(err => {
+      console.error(err)
+    })
+  }
+
+  const runFn = () => {
+    init();
+    
+  }
+
+  if ('Twikoo' === 'Twikoo' || !false) {
+    if (false) anzhiyu.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else {
+      loadTwikoo()
+    }
+  } else {
+    window.loadOtherComment = loadTwikoo
+  }
+})()</script><script>(() => {
+  let initFn = window.walineFn || null
+
+  const initWaline = (Fn) => {
+    const waline = Fn(Object.assign({
+      el: '#waline-wrap',
+      serverURL: 'https://blog-smoky-ten.vercel.app/',
+      pageview: false,
+      dark: 'html[data-theme="dark"]',
+      path: window.location.pathname,
+      comment: false,
+      imageUploader: true,
+    }, null))
+
+    const destroyWaline = () => {
+      waline.destroy()
+    }
+
+    anzhiyu.addGlobalFn('pjax', destroyWaline, 'destroyWaline')
+  }
+
+  const loadWaline = async () => {
+    if (initFn) initWaline(initFn)
+    else {
+      await getCSS('https://cdn.cbd.int/@waline/client@3.1.3/dist/waline.css')
+      if (false) await getCSS('https://cdn.cbd.int/@waline/client@3.1.3/dist/waline-meta.css')
+      const { init } = await import('https://cdn.cbd.int/@waline/client@3.1.3/dist/waline.js')
+      initFn = init || Waline.init
+      initWaline(initFn)
+      window.walineFn = initFn
+    }
+  }
+
+  if ('Twikoo' === 'Waline' || !false) {
+    if (false) anzhiyu.loadComment(document.getElementById('waline-wrap'),loadWaline)
+    else setTimeout(loadWaline, 0)
+  } else {
+    window.loadOtherComment = loadWaline
+  }
+})()</script><input type="hidden" name="page-type" id="page-type" value="post"></div><script>window.addEventListener('load', () => {
+  const changeContent = (content) => {
+    if (content === '') return content
+
+    content = content.replace(/<img.*?src="(.*?)"?[^\>]+>/ig, '[图片]') // replace image link
+    content = content.replace(/<a[^>]+?href=["']?([^"']+)["']?[^>]*>([^<]+)<\/a>/gi, '[链接]') // replace url
+    content = content.replace(/<pre><code>.*?<\/pre>/gi, '[代码]') // replace code
+    content = content.replace(/<[^>]+>/g,"") // remove html tag
+
+    if (content.length > 150) {
+      content = content.substring(0,150) + '...'
+    }
+    return content
+  }
+
+  const getComment = () => {
+    const runTwikoo = () => {
+      twikoo.getRecentComments({
+        envId: 'https://blog-smoky-ten.vercel.app/',
+        region: '',
+        pageSize: 6,
+        includeReply: true
+      }).then(function (res) {
+        const twikooArray = res.map(e => {
+          return {
+            'content': changeContent(e.comment),
+            'avatar': e.avatar,
+            'nick': e.nick,
+            'url': e.url + '#' + e.id,
+            'date': new Date(e.created).toISOString()
+          }
+        })
+
+        saveToLocal.set('twikoo-newest-comments', JSON.stringify(twikooArray), 10/(60*24))
+        generateHtml(twikooArray)
+      }).catch(function (err) {
+        const $dom = document.querySelector('#card-newest-comments .aside-list')
+        $dom.textContent= "无法获取评论，请确认相关配置是否正确"
+      })
+    }
+
+    if (typeof twikoo === 'object') {
+      runTwikoo()
+    } else {
+      getScript('https://cdn.cbd.int/twikoo@1.6.39/dist/twikoo.all.min.js').then(runTwikoo)
+    }
+  }
+
+  const generateHtml = array => {
+    let result = ''
+
+    if (array.length) {
+      for (let i = 0; i < array.length; i++) {
+        result += '<div class=\'aside-list-item\'>'
+
+        if (true) {
+          const name = 'data-lazy-src'
+          result += `<a href='${array[i].url}' class='thumbnail'><img ${name}='${array[i].avatar}' alt='${array[i].nick}'><div class='name'><span>${array[i].nick} </span></div></a>`
+        }
+        
+        result += `<div class='content'>
+        <a class='comment' href='${array[i].url}' title='${array[i].content}'>${array[i].content}</a>
+        <time datetime="${array[i].date}">${anzhiyu.diffDate(array[i].date, true)}</time></div>
+        </div>`
+      }
+    } else {
+      result += '没有评论'
+    }
+
+    let $dom = document.querySelector('#card-newest-comments .aside-list')
+    $dom && ($dom.innerHTML= result)
+    window.lazyLoadInstance && window.lazyLoadInstance.update()
+    window.pjax && window.pjax.refresh($dom)
+  }
+
+  const newestCommentInit = () => {
+    if (document.querySelector('#card-newest-comments .aside-list')) {
+      const data = saveToLocal.get('twikoo-newest-comments')
+      if (data) {
+        generateHtml(JSON.parse(data))
+      } else {
+        getComment()
+      }
+    }
+  }
+
+  newestCommentInit()
+  document.addEventListener('pjax:complete', newestCommentInit)
+})</script><script>var visitorMail = "lixiahanyu@outlook.com";
+</script><script async data-pjax src="https://cdn.cbd.int/anzhiyu-theme-static@1.0.0/waterfall/waterfall.js"></script><script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/qrcodejs/1.0.0/qrcode.min.js"></script><script src="/js/anzhiyu/right_click_menu.js"></script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.9/icon/ali_iconfont_css.css"><script id="click-show-text" src="https://cdn.cbd.int/butterfly-extsrc@1.1.3/dist/click-show-text.min.js" data-mobile="false" data-text="公众号：weyoung，欢迎关注,公众号：weyoung，欢迎关注,公众号：weyoung，欢迎关注" data-fontsize="15px" data-random="false" async="async"></script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.0.0/aplayer/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.cbd.int/anzhiyu-blog-static@1.0.1/js/APlayer.min.js"></script><script src="https://cdn.cbd.int/hexo-anzhiyu-music@1.0.1/assets/js/Meting2.min.js"></script><script src="https://cdn.cbd.int/pjax@0.2.8/pjax.min.js"></script><script>let pjaxSelectors = ["meta[property=\"og:image\"]","meta[property=\"og:title\"]","meta[property=\"og:url\"]","meta[property=\"og:type\"]","meta[property=\"og:site_name\"]","meta[property=\"og:description\"]","head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+  // removeEventListener scroll 
+  anzhiyu.removeGlobalFnEvent('pjax')
+  anzhiyu.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><script charset="UTF-8" src="https://cdn.cbd.int/anzhiyu-theme-static@1.1.5/accesskey/accesskey.js"></script></div><div id="popup-window"><div class="popup-window-title">通知</div><div class="popup-window-divider"></div><div class="popup-window-content"><div class="popup-tip">你好呀</div><div class="popup-link"><i class="anzhiyufont anzhiyu-icon-arrow-circle-right"></i></div></div></div></body></html>
